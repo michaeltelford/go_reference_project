@@ -61,11 +61,13 @@ The reference assumes:
 
 > main_test.go
 
-#### GoConvey
+#### goconvey
 
 > lib_test.go
 
 ### Debugging
+
+#### watcher
 
 #### Print Statements
 
