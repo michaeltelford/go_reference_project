@@ -4,8 +4,7 @@ import (
 	"net/http"
 
 	"github.com/justinas/alice"
-
-	"github.com/michaeltelford/go_reference_project/middleware/logger"
+	"github.com/michaeltelford/go_reference_project/src/middleware/logger"
 )
 
 func main() {
