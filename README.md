@@ -13,7 +13,7 @@ The reference assumes:
 
 - `go` is installed correctly
 - `$GOPATH` is correctly setup and configured (with `src`, `bin` and `pkg` within)
-- A basic working knowledge of `*nix` shell commands
+- A basic working knowledge of `*nix` and `git` shell commands
 
 ## Technical
 
@@ -22,7 +22,7 @@ The reference assumes:
 | Example Command       | Effect                                                       |
 | --------------------- | :----------------------------------------------------------- |
 | `go build main.go`    | Builds a binary or lib.                                      |
-| `go test ./...`       | Runs any tests that are found.                               |
+| `go test ./...`       | Runs any tests that are found. Searches `pwd` recursively.   |
 | `go install main.go`  | Builds and installs binary and libs locally to `$GOPATH`.    |
 | `go run main.go`      | Runs the file or binary.                                     |
 | `go get package_name` | Retrieves the software lib from the source and installs it <br />locally to `$GOPATH`. See 'Software Packages' below. |
@@ -31,7 +31,7 @@ The reference assumes:
 
 | Tool     | Effect                                                       |
 | -------- | ------------------------------------------------------------ |
-| `gofmt`  | Built in tool which formats your code. <br /><br />Built into many editors e.g. atom's go-plus package runs it on each save. |
+| `gofmt`  | Built in tool which formats your code. <br /><br />Built into many editors e.g. Atom's go-plus package runs it on each save. |
 | `golint` | Lints your code. <br /><br />GitHub: https://github.com/golang/lint<br />Install: `go get -u golang.org/x/lint/golint`<br /> |
 
 ### Documentation
@@ -46,13 +46,13 @@ https://golang.org/pkg/
 
 ### Project Workspace/Layout
 
-Every Go project should have a basic directory and file structure in place, a common workspace, an example might be:
+Every Go project should have a basic directory and file structure in place, a common workspace, an example one might look like:
 
 - `project_dir` (run `git init` here)
 - - `main.go` (Start of execution, can be called anything but must have `func main()` defined; an example main file can be seen below)
-  - `src` (optional dir can be called anything but src makes sense)
+  - `src` (optional dir can be called anything but 'src' makes sense)
     - `lib_dir` (this is the name of your lib)
-      - `lib_file` (can be called anything but `package` must be `lib_dir` - the containing directory name - doesn't work without this!)
+      - `lib_file` (file can be called anything but `package` within must be `lib_dir` - the containing directory name - doesn't work without this!)
       - `another_lib_file` (again `package` must be `lib_dir` to be part of the same lib)
       - ...
 
@@ -62,7 +62,7 @@ Go doesn't have a dedicated software repository like RubyGems.org for example. I
 
 #### Installation
 
-The `go get` command is used to install a 3rd party lib/package e.g. :
+The `go get` command is used to install a 3rd party lib/package locally e.g. :
 
 ```
 	$ go get github.com/justinas/alice
@@ -88,6 +88,44 @@ import (
 ```
 
 You should note that because the import paths are absolute, the `main.go` file can be placed anywhere on your file system and then moved without the import paths needing updated. 
+
+#### Dependancy Management
+
+Go has a (soon to be) official dependancy management tool called Go Dep. There are a couple other 3rd party tools out there but this one is from the Go core team and should probably be used over anything else. 
+
+##### Basic Usage
+
+See the docs below for a full description on using `dep` but in a nutshell:
+
+Install dep on a Mac with:
+
+```
+	$ brew install dep
+```
+
+To initialise a new repo/project, run:
+
+```
+	$ dep init
+```
+
+You should commit the generated files and directory to source.
+
+Once initialised, keep your deps up to date with:
+
+```
+	$ dep ensure
+```
+
+Remember to run `dep ensure` before you commit new changes to keep your deps in sync. That's about it. 
+
+##### GitHub
+
+https://github.com/golang/dep
+
+##### Docs
+
+https://golang.github.io/dep
 
 ### Example Main
 
@@ -169,22 +207,22 @@ Some things to note:
 
 - **Constructor & Interface** - `New` is a constructor function which returns an instance of the `http.Handler` interface (which all middleware components adhere to). 
 - **Struct** - The `logger` type is a struct containing the next piece of middleware to be called and a logger instance. 
-- **Methods** - The `ServeHTTP` func is a method because it has a receiver of `logger` (identified by `l`). `New` is a fun (not a method) because it has no receiver. 
+- **Methods** - The `ServeHTTP` func is a method because it has a receiver of `logger` (identified by `l`). `New` is a function (not a method) because it has no receiver. 
 - **Exports** - Go exports anything that is capitalised, otherwise its private, accessible only within its package. In this case, only `New` is exported which is typical of constructor functions. 
 
 ### Testing
 
-Below are some commonly used testing libs for Go. All test files should be located in the same directory as the file they test. The test file name should also end in `*_test.go`. 
+Below are some commonly used testing libs for Go. All test files should be located in the same directory as the file they test, not a dedicated `test` directory like some languages. The test file name should also end in `*_test.go`. 
 
 #### go test
 
-Go provides a default `testing` package in the std lib for unit testing your code. Below is an excellent guide to getting started. 
+Go provides a default `testing` package in the std lib for unit testing your code. Below is an excellent guide to getting started (with examples). 
 
 https://smartystreets.com/blog/2015/02/go-testing-part-1-vanillla
 
 ##### Example
 
-Below is a basic example of unit testing using Go's built in `testing` package. 
+Below is a basic example of unit testing using Go's built in `testing` package. It's taken from the guide above. 
 
 > vanilla_test.go
 
@@ -208,6 +246,8 @@ func TestGutterBalls(t *testing.T) {
 #### goconvey
 
 GoConvey is a 3rd party BDD testing tool with a rich array of assertions built in. It also provides a useful web UI for displaying test results (and running them automatically on file change). The package is also backward compatible with `go test` meaning you can use its UI separate from its testing lib. 
+
+##### Github
 
 https://github.com/smartystreets/goconvey
 
@@ -293,9 +333,19 @@ func TestServeHTTP(t *testing.T) {
 
 ### Debugging
 
+There are several methods to help with debugging an application. Here are a couple of examples. 
+
 #### watcher
 
+The 3rd party watcher lib prevents you from having to restart your app with each new change by doing it for you on the saving of a watched file. To use it, install it and simply `cd` into the directory containing the `main.go` file of your application and run the `watcher` command. Watcher will automatically restart your app with any changes. This is very useful during development and debugging and requires no configuration. Just install and run. 
+
+##### Github
+
+https://github.com/canthefason/go-watcher
+
 #### Print Statements
+
+It might be old skool but sometimes print statements to `STDOUT` are enough to debug the logic in your application. You can do so by using Go's `fmt` or `log` std lib packages.
 
 ```go
 import "fmt"
@@ -303,12 +353,52 @@ import "fmt"
 fmt.Println(someVar)
 ```
 
-#### Breakpoints
+#### CLI Debugger
 
-- command line debugger lib?
-- atom
-- gogland
+If you're not using an IDE but need a breakpoint or two then consider using Go Delve. It allows you to debug an application by setting breakpoints via the CLI. When stopped on a breakpoint you can type `help` for the list of commands. You can continue, step to the next line, step into a function, print and/or set a variable during runtime and lots of other cool debugging features. 
+
+##### Github
+
+https://github.com/derekparker/delve
+
+##### Basic Usage
+
+```sh
+$ dlv debug
+Type 'help' for list of commands.
+(dlv) break main.main
+Breakpoint 1 set at 0x12e8428 for main.main() ./main.go:10
+(dlv) continue
+> main.main() ./main.go:10 (hits goroutine(1):1 total:1) (PC: 0x12e8428)
+     5:	
+     6:		"github.com/justinas/alice"
+     7:		"github.com/michaeltelford/go_reference_project/src/middleware/logger"
+     8:	)
+     9:	
+=>  10:	func main() {
+    11:		chain := alice.New(logger.New).Then(newApp())
+    12:		http.ListenAndServe(`:8080`, chain)
+    13:	}
+    14:	
+    15:	func newApp() http.Handler {
+```
+
+#### IDE Debuggers
+
+There are probably a few Go specific IDE's out there so DuckDuckGo (search engine) is your friend here. However, one I've used is GoLand. It has the ability to set breakpoints and debug inside the IDE. 
+
+##### Website
+
+https://www.jetbrains.com/go
+
+#### Text Editor Debuggers
+
+There are also more than a few text editors out there that support the Go language via packages etc. So again, just check if a package exists for your current fav editor. I personally like to use Atom and its go-plus package which does some cool stuff straight out of the box. For example, it builds and tests your code on each file save. It also has the ability to debug using breakpoints but I haven't used this much. 
+
+##### Website
+
+https://atom.io/packages/go-plus
 
 ## Thanks
 
-Thanks for looking, if you have any suggestions on improving the reference or new additions then feel free to raise an issue. Also, if you'd like to have your own reference project then feel free to use this as a starter and fork it.
+Thanks for looking, if you have any suggestions on improving the reference or new additions then feel free to raise an issue. Also, if you'd like to have your own reference project then feel free to use this as a starter and fork it. 
